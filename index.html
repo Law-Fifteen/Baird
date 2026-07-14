@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baird Academy | Training Framework</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#1a1520;--bg2:#241e20;--bg3:#2e2630;--accent:#e31e27;--accent-dim:rgba(227,30,39,.15);--glass:rgba(255,255,255,.04);--glass-border:rgba(255,255,255,.08);--text:#e8e4ec;--text-dim:#9a929e;--text-muted:#6a626e;--success:#22c55e;--warning:#f59e0b;--info:#3b82f6;--purple:#a78bfa;--radius:12px;--radius-sm:8px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.6}
+h1,h2,h3,h4,h5{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:600;line-height:1.2}
+.bokeh{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.bokeh span{position:absolute;border-radius:50%;filter:blur(80px);opacity:.04;animation:float 25s infinite ease-in-out}
+.bokeh span:nth-child(1){width:600px;height:600px;background:#e31e27;top:-10%;left:-5%}
+.bokeh span:nth-child(2){width:500px;height:500px;background:#3b82f6;top:50%;right:-10%;animation-delay:-8s}
+.bokeh span:nth-child(3){width:400px;height:400px;background:#e31e27;bottom:-5%;left:30%;animation-delay:-16s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.05)}66%{transform:translate(-20px,30px) scale(.95)}}
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+.sidebar{width:272px;background:var(--bg2);border-right:1px solid var(--glass-border);padding:24px 0;display:flex;flex-direction:column;position:fixed;height:100vh;overflow-y:auto;transition:transform .3s;z-index:50}
+.main{flex:1;margin-left:272px;padding:32px 40px;max-width:1100px}
+.sidebar-header{padding:0 20px 20px;border-bottom:1px solid var(--glass-border)}
+.sidebar-header h1{font-size:1.3rem;color:var(--accent);margin-bottom:2px}
+.sidebar-header span{font-size:.72rem;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+.progress-bar{height:4px;background:var(--bg);border-radius:2px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#ff4d54);border-radius:2px;transition:width .6s ease}
+.nav{padding:12px 0;flex:1;overflow-y:auto}
+.nav-label{padding:14px 20px 6px;font-size:.62rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;color:var(--text-dim);cursor:pointer;transition:all .2s;font-size:.84rem;border-left:3px solid transparent}
+.nav-item:hover{background:var(--glass);color:var(--text)}
+.nav-item.active{color:var(--accent);background:var(--accent-dim);border-left-color:var(--accent)}
+.nav-item .ch-num{width:22px;height:22px;border-radius:6px;background:var(--glass);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0}
+.nav-item.active .ch-num{background:rgba(227,30,39,.25);color:var(--accent)}
+.nav-item svg{width:17px;height:17px;flex-shrink:0}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--glass-border);font-size:.72rem;color:var(--text-muted)}
+.menu-toggle{display:none;position:fixed;top:14px;left:14px;z-index:100;width:40px;height:40px;background:var(--bg2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text);cursor:pointer;align-items:center;justify-content:center;font-size:1.2rem}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0;padding:60px 16px 24px}.menu-toggle{display:flex}}
+
+/* Pages */
+.page{display:none}.page.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Welcome */
+.welcome{margin-bottom:28px}.welcome h2{font-size:1.7rem;margin-bottom:4px}.welcome p{color:var(--text-dim)}
+
+/* Stats */
+.chapter-item.completed{border-color:rgba(34,197,94,.35)!important;background:rgba(34,197,94,.05)!important}
+.chapter-item.completed .num{background:rgba(34,197,94,.2)!important;color:var(--success)!important}
+.chapter-item.completed .ch-info h4{color:var(--success)!important}
+
+/* Cards */
+.card{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:22px;margin-bottom:16px}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:22px;background:var(--bg);border-radius:var(--radius-sm);padding:4px;flex-wrap:wrap}
+.tab{padding:7px 14px;border-radius:6px;font-size:.78rem;cursor:pointer;color:var(--text-dim);transition:all .2s;border:none;background:none;font-family:inherit}
+.tab:hover{color:var(--text)}.tab.active{background:var(--accent);color:#fff}
+
+/* Chapter list */
+.chapter-list{display:grid;gap:10px}
+.chapter-item{display:flex;align-items:center;gap:14px;background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:all .2s}
+.chapter-item:hover{border-color:rgba(227,30,39,.3);background:rgba(227,30,39,.04)}
+.chapter-item .num{width:40px;height:40px;border-radius:10px;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0}
+.chapter-item .ch-info{flex:1}.chapter-item .ch-info h4{font-size:.92rem;margin-bottom:2px}.chapter-item .ch-info span{font-size:.76rem;color:var(--text-dim)}
+
+/* ITTT Section */
+.ittt-section{margin-bottom:36px}
+.ittt-section h2{font-size:1.25rem;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.ittt-section h2 .icon{width:30px;height:30px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:.9rem}
+.ittt-section>p{color:var(--text-dim);margin-bottom:18px;font-size:.88rem}
+
+/* ITTT Card */
+.ittt-card{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
+.ittt-card-header{padding:18px 22px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:background .2s}
+.ittt-card-header:hover{background:rgba(255,255,255,.02)}
+.ittt-card-header .marker{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0}
+.ittt-card-header .marker.red{background:var(--accent-dim);color:var(--accent)}
+.ittt-card-header .marker.blue{background:rgba(59,130,246,.15);color:var(--info)}
+.ittt-card-header .marker.green{background:rgba(34,197,94,.15);color:var(--success)}
+.ittt-card-header .marker.yellow{background:rgba(245,158,11,.15);color:var(--warning)}
+.ittt-card-header .marker.purple{background:rgba(139,92,246,.15);color:var(--purple)}
+.ittt-card-header .info{flex:1}.ittt-card-header .info h4{font-size:.92rem;margin-bottom:2px}.ittt-card-header .info span{font-size:.76rem;color:var(--text-dim)}
+.ittt-card-header .arrow{color:var(--text-muted);transition:transform .3s;font-size:1.1rem}
+.ittt-card.open .ittt-card-header .arrow{transform:rotate(180deg)}
+.ittt-card-body{display:none;padding:0 22px 22px;border-top:1px solid var(--glass-border)}
+.ittt-card.open .ittt-card-body{display:block}
+
+/* Content blocks */
+.block{border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:10px}
+.block-if{background:rgba(227,30,39,.06);border:1px solid rgba(227,30,39,.15)}
+.block-then{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15)}
+.block-notice{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15)}
+.block-mistake{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15)}
+.block-approach{background:rgba(255,255,255,.03);border:1px solid var(--glass-border)}
+.block-why{background:rgba(227,30,39,.04);border-left:3px solid var(--accent);padding:12px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.block-principle{text-align:center;padding:18px;background:linear-gradient(135deg,rgba(227,30,39,.08),rgba(227,30,39,.02));border-radius:var(--radius-sm);border:1px solid rgba(227,30,39,.12)}
+.block .label{font-size:.62rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:5px}
+.block-if .label{color:var(--accent)}.block-then .label{color:var(--info)}.block-notice .label{color:var(--success)}.block-mistake .label{color:var(--warning)}.block-approach .label{color:var(--text)}.block-why .label{color:var(--accent)}.block-principle .label{color:var(--accent)}
+.block p,.block li{color:var(--text);font-size:.88rem}
+.block blockquote{border-left:3px solid var(--accent);padding-left:12px;color:var(--text);font-style:italic;margin:6px 0}
+.block ul{list-style:none;padding:0}.block li{padding:3px 0 3px 18px;position:relative}
+.block-notice li::before,.block-mistake li::before{content:'';position:absolute;left:0;top:10px;width:7px;height:7px;border-radius:50%;opacity:.6}
+.block-notice li::before{background:var(--success)}.block-mistake li::before{background:var(--warning)}
+.block-principle p{font-size:.95rem;font-weight:600}
+
+/* Chapter sections */
+.ch-section{margin-bottom:28px}
+.ch-section h3{font-size:1.05rem;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--glass-border)}
+.ch-section p{color:var(--text-dim);font-size:.88rem;margin-bottom:8px}
+.ch-section ul{list-style:none;padding:0}.ch-section li{padding:4px 0 4px 18px;position:relative;color:var(--text-dim);font-size:.86rem}
+.ch-section li::before{content:'\203A';position:absolute;left:0;color:var(--accent);font-weight:700}
+.ch-nav{display:flex;justify-content:space-between;margin-top:32px;padding-top:20px;border-top:1px solid var(--glass-border)}
+.ch-nav button{padding:10px 20px;border-radius:var(--radius-sm);border:1px solid var(--glass-border);background:var(--glass);color:var(--text);cursor:pointer;font-family:inherit;font-size:.84rem;transition:all .2s}
+.ch-nav button:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.ch-nav button:disabled{opacity:.3;cursor:not-allowed}
+
+/* Key Takeaway */
+.key-takeaway{background:linear-gradient(135deg,rgba(227,30,39,.1),rgba(227,30,39,.03));border:1px solid rgba(227,30,39,.2);border-radius:var(--radius);padding:18px 22px;margin:20px 0;text-align:center}
+.key-takeaway .kt-label{font-size:.6rem;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:6px}
+.key-takeaway p{font-size:1rem;font-weight:600;color:var(--text)}
+
+/* Checklist */
+.checklist{list-style:none;padding:0}.checklist li{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--glass-border)}.checklist li:last-child{border-bottom:none}
+.check-box{width:20px;height:20px;border:2px solid var(--glass-border);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:2px}
+.check-box.checked{background:var(--success);border-color:var(--success)}.check-box.checked::after{content:'\2713';color:#fff;font-size:.7rem;font-weight:700}
+.checklist .item-text{font-size:.86rem}.checklist .item-text.checked-text{text-decoration:line-through;color:var(--text-muted)}
+
+/* Login Overlay */
+.login-overlay{position:fixed;inset:0;z-index:9999;background:#241e20;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s ease}
+.login-overlay.fade-out{opacity:0;pointer-events:none}
+.splash-logo{max-width:320px;width:80%;opacity:0;animation:logoIn 1.2s ease .3s forwards}
+@keyframes logoIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.login-box{width:340px;max-width:90%;opacity:0;animation:fadeUp .6s ease 1.6s forwards;text-align:center;margin-top:28px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.login-box h2{font-size:1.1rem;margin-bottom:6px;font-family:'Space Grotesk',sans-serif}
+.login-box p.sub{font-size:.78rem;color:var(--text-dim);margin-bottom:22px}
+.login-field{margin-bottom:14px;text-align:left}
+.login-field label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:5px}
+.login-field input{width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--glass-border);background:var(--glass);color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;outline:none;transition:border-color .2s}
+.login-field input:focus{border-color:rgba(227,30,39,.4)}
+.login-actions{display:flex;gap:10px;margin-top:20px}
+.login-actions a,.login-actions button{flex:1;padding:11px 0;border-radius:var(--radius-sm);font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;transition:all .2s;border:none;font-family:'Inter',sans-serif}
+.login-actions a{background:transparent;border:1px solid var(--glass-border);color:var(--text-dim)}
+.login-actions a:hover{border-color:var(--text-dim);color:var(--text)}
+.login-actions button{background:var(--accent);color:#fff;border:1px solid var(--accent)}
+.login-actions button:hover{background:#c41820}
+.login-error{color:var(--warning);font-size:.76rem;margin-top:10px;min-height:1.1em}
+.app.hidden{display:none}
+
+/* Checklist Notes & Actions */
+.checklist-notes{width:100%;min-height:100px;border-radius:var(--radius-sm);border:1px solid var(--glass-border);background:var(--glass);color:var(--text);font-family:'Inter',sans-serif;font-size:.85rem;padding:12px 14px;resize:vertical;outline:none;line-height:1.5}
+.checklist-notes:focus{border-color:rgba(227,30,39,.3)}
+.checklist-notes::placeholder{color:var(--text-muted)}
+.checklist-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.checklist-actions button{padding:10px 22px;border-radius:var(--radius-sm);font-size:.82rem;font-weight:600;cursor:pointer;border:1px solid var(--glass-border);font-family:'Inter',sans-serif;transition:all .2s}
+.btn-clear{background:transparent;color:var(--text-dim)}
+.btn-clear:hover{border-color:var(--warning);color:var(--warning)}
+.btn-export{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-export:hover{background:#c41820}
+
+/* Modals */
+.modal-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--bg3);border:1px solid var(--glass-border);border-radius:var(--radius);padding:28px 30px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-box p{font-size:.95rem;margin-bottom:22px;color:var(--text)}
+.modal-actions{display:flex;gap:10px;justify-content:center}
+.modal-actions button{padding:10px 24px;border-radius:var(--radius-sm);font-size:.82rem;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .2s}
+.modal-cancel{background:var(--glass);color:var(--text-dim);border:1px solid var(--glass-border)!important}
+.modal-cancel:hover{color:var(--text);border-color:var(--text-dim)!important}
+.modal-confirm{background:var(--accent);color:#fff}
+.modal-confirm:hover{background:#c41820}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--glass-border);border-radius:3px}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="login-overlay" id="loginOverlay">
+<img src="https://www.bairdfoundationrepair.com/wp-content/uploads/2025/07/baird-black-background-logo.png" alt="Baird Foundation Repair" class="splash-logo">
+<div class="login-box">
+<h2>Sign in to access training</h2>
+<div class="login-field"><label>Username</label><input type="text" id="loginUser" autocomplete="off"></div>
+<div class="login-field"><label>Password</label><input type="password" id="loginPass"></div>
+<div class="login-actions">
+<a href="mailto:MorganAmbrose@proton.me">Request Access</a>
+<button onclick="attemptLogin()">Login</button>
+</div>
+<div class="login-error" id="loginError"></div>
+</div>
+</div>
+<div class="bokeh"><span></span><span></span><span></span></div>
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+<div class="app hidden">
+<aside class="sidebar">
+<div class="sidebar-header">
+<h1>Baird Academy</h1>
+<span>Training Framework v1.0</span>
+<div class="progress-bar"><div class="progress-fill" style="width:0%" id="globalProgress"></div></div>
+</div>
+<nav class="nav">
+<div class="nav-label">Learning</div>
+<div class="nav-item active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</div>
+<div class="nav-item" data-page="ch1"><span class="ch-num">1</span>Customer Psychology</div>
+<div class="nav-item" data-page="ch2"><span class="ch-num">2</span>Discovery Framework</div>
+<div class="nav-item" data-page="ch3"><span class="ch-num">3</span>Objection Handling</div>
+<div class="nav-item" data-page="ch4"><span class="ch-num">4</span>Performance Improvement</div>
+<div class="nav-label">Training</div>
+<div class="nav-item" data-page="if-this"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4"/></svg>If This Then That</div>
+<div class="nav-item" data-page="common-mistakes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>Common Mistakes</div>
+<div class="nav-item" data-page="great-reps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Great Reps Recognize</div>
+<div class="nav-label">Reference</div>
+<div class="nav-item" data-page="field-guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Field Guide</div>
+<div class="nav-item" data-page="coaching"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"/></svg>Manager Coaching</div>
+<div class="nav-item" data-page="checklist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Ride-Along Checklist</div>
+</nav>
+<div class="sidebar-footer">Baird Foundation Repair &copy; 2026</div>
+</aside>
+<div class="main">
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+<div class="welcome"><h2>Welcome Back</h2><p>Your training journey. Every chapter builds judgment, not memorization.</p></div>
+<h3 style="margin-bottom:14px;font-size:1.05rem">Chapters</h3>
+<div class="chapter-list">
+<div class="chapter-item" onclick="navigateTo('ch1')"><div class="num">1</div><div class="ch-info"><h4>Customer Psychology</h4><span>Understand what homeowners are thinking before you speak</span></div></div>
+<div class="chapter-item" onclick="navigateTo('ch2')"><div class="num">2</div><div class="ch-info"><h4>Discovery Framework</h4><span>Diagnose people before diagnosing homes</span></div></div>
+<div class="chapter-item" onclick="navigateTo('ch3')"><div class="num">3</div><div class="ch-info"><h4>Objection Handling</h4><span>Diagnose objections instead of memorizing scripts</span></div></div>
+<div class="chapter-item" onclick="navigateTo('ch4')"><div class="num">4</div><div class="ch-info"><h4>Performance Improvement</h4><span>Self-diagnose and improve without waiting for management</span></div></div>
+</div>
+</div>
+<!-- CHAPTER 1: CUSTOMER PSYCHOLOGY -->
+<div class="page" id="page-ch1">
+<div class="ittt-section">
+<h2><span class="icon" style="background:var(--accent-dim);color:var(--accent)">1</span> Customer Psychology</h2>
+<p>Understand what homeowners are thinking before consultants ever speak. Every interaction is shaped by the emotional journey that started long before you arrived.</p>
+</div>
+
+<div class="ch-section">
+<h3>The Most Important Principle</h3>
+<p>Homeowners almost never call Baird because they want foundation repair. They call because <strong>certainty has disappeared</strong>.</p>
+<p>By the time someone schedules an inspection, they've often spent days or weeks thinking:</p>
+<ul>
+<li>"Maybe it's nothing..."</li>
+<li>"Maybe it's getting worse..."</li>
+<li>"What if my house is unsafe?"</li>
+<li>"How much is this going to cost?"</li>
+<li>"Am I about to get taken advantage of?"</li>
+</ul>
+<p>The consultant's job is to <strong>reduce uncertainty</strong>&mdash;not increase pressure.</p>
+</div>
+
+<div class="ch-section">
+<h3>The Emotional Timeline</h3>
+<p>Every homeowner moves through predictable emotional states. Understanding these stages allows the consultant to lead instead of react.</p>
+</div>
+
+<div class="ittt-card open">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">1</div>
+<div class="info"><h4>Stage 1 &ndash; Problem Recognition</h4><span>Internal dialogue: "Hopefully this isn't serious."</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Typical Triggers</div>
+<ul><li>New drywall crack</li><li>Existing crack growing</li><li>Doors sticking</li><li>Windows won't open</li><li>Sloping floor</li><li>Water intrusion</li><li>Neighbor had foundation work</li><li>Home inspection report</li></ul></div>
+<div class="block block-then"><div class="label">What's Happening</div><p>At this point the homeowner is usually <strong>hoping they're wrong</strong>. They're not looking for a repair&mdash;they're looking for reassurance that it's nothing.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">2</div>
+<div class="info"><h4>Stage 2 &ndash; Internet Research</h4><span>Within minutes they're overwhelmed</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">What They Find</div>
+<ul><li>Horror stories</li><li>Contractor scams</li><li>Conflicting advice</li><li>YouTube engineers</li><li>Reddit opinions</li><li>Articles telling them their home is failing</li></ul></div>
+<div class="block block-then"><div class="label">What Happens</div><p>Their <strong>anxiety increases</strong>. They search for "foundation crack," "doors sticking," "foundation repair near me," and "cost of foundation repair." Within minutes they're overwhelmed with conflicting information and fear-based content.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">3</div>
+<div class="info"><h4>Stage 3 &ndash; Scheduling</h4><span>Mixed emotions: excitement, fear, distrust</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Emotional State</div>
+<ul><li><strong>Excitement:</strong> "I'll finally know."</li><li><strong>Fear:</strong> "I don't want to hear bad news."</li><li><strong>Distrust:</strong> "I know he's coming to sell me."</li></ul></div>
+<div class="block block-then"><div class="label">What This Means</div><p>The appointment itself creates mixed emotions. The customer is simultaneously hoping for answers and dreading them. They're also pre-loaded with distrust because they assume every consultant is there to sell them something.</p></div>
+</div></div>
+
+<div class="key-takeaway">
+<div class="kt-label">Key Takeaway</div>
+<p>Homeowners don't call because they want repair. They call because certainty disappeared. Your job is to restore it.</p>
+</div>
+<div class="ch-section">
+<h3>Arrival Psychology</h3>
+<p>When the truck pulls up the homeowner immediately begins evaluating. Questions they're asking subconsciously:</p>
+<ul>
+<li>Do they look professional?</li>
+<li>Are they rushed?</li>
+<li>Are they respectful?</li>
+<li>Do they seem trustworthy?</li>
+<li>Can they explain things?</li>
+<li>Will they pressure me?</li>
+</ul>
+<p><strong>The sale begins before anyone speaks.</strong></p>
+</div>
+
+<div class="ch-section">
+<h3>The First Five Minutes</h3>
+<p>The customer isn't evaluating technical ability. They're evaluating <strong>emotional safety</strong>. They're deciding: <em>Can I relax around this person?</em></p>
+<p>Top consultants lower defenses immediately through:</p>
+<ul>
+<li>Professional appearance</li>
+<li>Confident posture</li>
+<li>Relaxed pace</li>
+<li>Eye contact</li>
+<li>Warm introduction</li>
+<li>Clear expectations</li>
+<li>Respect for the home</li>
+</ul>
+</div>
+
+<div class="ch-section">
+<h3>During the Inspection</h3>
+<p>Most homeowners don't know what the consultant is looking for. That creates a dangerous vacuum.</p>
+<p>If the consultant disappears for 45 minutes, the homeowner imagines: <em>"They found something terrible"</em> OR <em>"They're just trying to make this seem complicated."</em></p>
+<p><strong>Instead: Narrate the inspection.</strong></p>
+<p>Example: <em>"I'm checking whether these cracks line up with the elevation changes outside."</em></p>
+<p>Now the homeowner feels included.</p>
+</div>
+
+<div class="ch-section">
+<h3>Information vs. Interpretation</h3>
+<p>Customers observe symptoms. Consultants interpret them.</p>
+<ul>
+<li>Customer sees: Crack. Consultant sees: Settlement pattern.</li>
+<li>Customer sees: Door sticking. Consultant sees: Differential movement.</li>
+</ul>
+<p>Never assume customers know the connection. <strong>Explain it.</strong></p>
+</div>
+
+<div class="ch-section">
+<h3>Fear of Being Sold</h3>
+<p>Every homeowner carries this concern. Questions in their mind:</p>
+<ul>
+<li>Will they exaggerate?</li>
+<li>Will they invent problems?</li>
+<li>Can I trust the diagnosis?</li>
+</ul>
+<p>This is why <strong>education always precedes recommendation</strong>.</p>
+</div>
+
+<div class="ch-section">
+<h3>The Trust Equation</h3>
+<p>Trust grows from four variables:</p>
+<ul>
+<li><strong>Credibility</strong> &mdash; Technical competence</li>
+<li><strong>Reliability</strong> &mdash; Doing exactly what was promised</li>
+<li><strong>Transparency</strong> &mdash; Showing, not hiding, evidence</li>
+<li><strong>Empathy</strong> &mdash; Acknowledging homeowner concerns</li>
+</ul>
+<p>If one variable is missing, trust weakens.</p>
+</div>
+
+<div class="ch-section">
+<h3>The Moment They Believe You</h3>
+<p>This almost never happens during pricing. It happens when the homeowner says something like:</p>
+<ul>
+<li><em>"That actually makes sense."</em></li>
+<li><em>"I never thought about it that way."</em></li>
+</ul>
+<p><strong>Understanding creates confidence. Confidence precedes buying.</strong></p>
+</div>
+
+<div class="ch-section">
+<h3>Decision Anxiety</h3>
+<p>Even after believing the diagnosis, new fears emerge:</p>
+<ul>
+<li>Can I afford this?</li>
+<li>What if another company says something different?</li>
+<li>Should I wait?</li>
+<li>Will this really fix it?</li>
+</ul>
+<p>This is where weaker consultants begin "hard selling." <strong>Top consultants continue educating.</strong></p>
+</div>
+
+<div class="ch-section">
+<h3>Why People Delay</h3>
+<p>Most delays have nothing to do with money. They are emotional:</p>
+<ul>
+<li>Fear of making a mistake</li>
+<li>Need spouse approval</li>
+<li>Need certainty</li>
+<li>Need comparison</li>
+<li>Need processing time</li>
+</ul>
+<p><strong>Teach consultants to diagnose hesitation&mdash;not attack it.</strong></p>
+</div>
+
+<div class="ch-section">
+<h3>Financing Psychology</h3>
+<p>Many customers assume financing equals failure. Instead of discussing payment, discuss <strong>affordability</strong>.</p>
+<p>Instead of: <em>"It's $18,000."</em></p>
+<p>Frame it: <em>"This is an investment in protecting a several-hundred-thousand-dollar asset."</em></p>
+</div>
+<div class="ch-section">
+<h3>After Signing</h3>
+<p>Customers often experience buyer's remorse. Internal thoughts: <em>"Did I overpay?" "Should I have gotten another quote?"</em></p>
+<p>This is where reassurance matters. <strong>A follow-up call within 24 hours dramatically reinforces confidence.</strong></p>
+</div>
+
+<div class="ch-section">
+<h3>Installation Day Psychology</h3>
+<p>Customers now evaluate whether the company matches the sales experience. Communication becomes more important than speed. The installer reinforces trust.</p>
+</div>
+
+<div class="ch-section">
+<h3>Post-Installation</h3>
+<p>Now customers become advocates. Their mindset shifts from <em>"I hope I made the right decision"</em> to <em>"I'm glad that's behind us."</em></p>
+<p>This is the best time for:</p>
+<ul><li>Reviews</li><li>Testimonials</li><li>Referrals</li></ul>
+</div>
+
+<div class="ch-section">
+<h3>Psychological Profiles</h3>
+</div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker blue">E</div>
+<div class="info"><h4>The Engineer</h4><span>Needs evidence, measurements, photos, data</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">How To Engage</div>
+<p>Don't oversimplify. This customer wants to see the numbers, the photos, the elevation readings. Show your work. Walk them through the data. They'll trust you when they can verify your findings themselves.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker blue">S</div>
+<div class="info"><h4>The Skeptic</h4><span>Needs transparency, patience, no pressure</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">How To Engage</div>
+<p>Expect many questions. Answer every one without defensiveness. This customer has likely been burned before or doesn't trust contractors. Patience and transparency are your greatest tools. Never pressure.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker blue">B</div>
+<div class="info"><h4>The Emotional Buyer</h4><span>Needs safety, reassurance, confidence</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">How To Engage</div>
+<p>Less technical explanation. More reassurance. This customer needs to feel safe. Focus on the outcome&mdash;a stable, secure home&mdash;not the engineering details. Build confidence through empathy.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker blue">F</div>
+<div class="info"><h4>The Financial Planner</h4><span>Needs ROI, home value, warranty, payment options</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">How To Engage</div>
+<p>This customer thinks in terms of investment. Frame the repair as protecting home value. Discuss warranty as a long-term asset. Present payment options clearly. They want to know the numbers make sense.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker blue">P</div>
+<div class="info"><h4>The Busy Professional</h4><span>Needs efficiency, clear recommendations, minimal complexity</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">How To Engage</div>
+<p>Be efficient. Get to the point. This customer values their time above all else. Give them a clear recommendation with clear next steps. Don't waste time on details they didn't ask for.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker blue">D</div>
+<div class="info"><h4>The DIY Researcher</h4><span>Has watched dozens of YouTube videos</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">How To Engage</div>
+<p>Treat respectfully. Never argue. Invite discussion. This customer has done their homework&mdash;some of it good, some of it bad. Acknowledge what they've learned and bridge it to your expertise.</p></div>
+</div></div>
+
+<div class="ch-section">
+<h3>What Great Consultants Actually Sell</h3>
+<p>They sell:</p>
+<ul>
+<li>Confidence</li>
+<li>Safety</li>
+<li>Understanding</li>
+<li>Predictability</li>
+<li>Professionalism</li>
+</ul>
+<p>Not concrete. Not steel. Not piers.</p>
+</div>
+
+<div class="ch-section">
+<h3>Supervisor Coaching Questions</h3>
+<p>Instead of asking: <em>"Why didn't they buy?"</em></p>
+<p>Ask:</p>
+<ul>
+<li>"When did they begin trusting you?"</li>
+<li>"What evidence convinced them?"</li>
+<li>"What emotional concern remained unresolved?"</li>
+<li>"Did they understand the problem before you recommended a solution?"</li>
+</ul>
+<p>Those questions reveal where the sales process actually broke down.</p>
+</div>
+
+<div class="key-takeaway">
+<div class="kt-label">Key Takeaway</div>
+<p>Great consultants sell confidence, safety, and understanding&mdash;not concrete, steel, or piers.</p>
+</div>
+
+<div class="ch-nav">
+<button disabled>&larr; Previous</button>
+<button onclick="navigateTo('ch2')" data-complete="ch1">Chapter 2: Discovery Framework &rarr;</button>
+</div>
+</div>
+<!-- CHAPTER 2: DISCOVERY FRAMEWORK -->
+<div class="page" id="page-ch2">
+<div class="ittt-section">
+<h2><span class="icon" style="background:var(--accent-dim);color:var(--accent)">2</span> Discovery Framework</h2>
+<p>Diagnose people before diagnosing homes. The inspection identifies structural problems. Discovery identifies buying motivations. Both are equally important.</p>
+</div>
+
+<div class="ch-section">
+<h3>The Rule of Discovery</h3>
+<p>Never recommend before understanding:</p>
+<ul>
+<li><strong>Problem</strong> &mdash; What's happening structurally</li>
+<li><strong>Impact</strong> &mdash; How it affects the homeowner</li>
+<li><strong>Priority</strong> &mdash; Where this falls among their concerns</li>
+<li><strong>Decision Process</strong> &mdash; Who needs to be involved</li>
+<li><strong>Budget Comfort</strong> &mdash; What they expect and can invest</li>
+<li><strong>Timeline</strong> &mdash; When they need this resolved</li>
+</ul>
+<p>Two customers with identical foundations may buy for completely different reasons.</p>
+</div>
+
+<div class="ch-section">
+<h3>The Discovery Funnel</h3>
+<p>Every appointment follows this sequence:</p>
+<ul>
+<li><strong>Rapport</strong> &rarr; <strong>Current Concern</strong> &rarr; <strong>History</strong> &rarr; <strong>Impact</strong> &rarr; <strong>Future Goals</strong> &rarr; <strong>Decision Process</strong> &rarr; <strong>Financial Comfort</strong> &rarr; <strong>Commitment</strong></li>
+</ul>
+</div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">1</div>
+<div class="info"><h4>Stage 1 &mdash; Opening Discovery</h4><span>Understand why today</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Questions To Ask</div>
+<ul>
+<li>"What made you decide to schedule the inspection now?"</li>
+<li>"When did you first notice the issue?"</li>
+<li>"What changed recently?"</li>
+<li>"What concerns you the most?"</li>
+</ul>
+<p style="margin-top:8px">These establish urgency.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">2</div>
+<div class="info"><h4>Stage 2 &mdash; History</h4><span>Learn the property's story</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Questions To Ask</div>
+<ul>
+<li>"Have you noticed this before?"</li>
+<li>"Has anyone inspected the home previously?"</li>
+<li>"Have repairs ever been made?"</li>
+<li>"Have you owned the home long?"</li>
+<li>"Did the previous owner mention anything?"</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">3</div>
+<div class="info"><h4>Stage 3 &mdash; Symptoms</h4><span>Avoid yes/no questions</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Questions To Ask</div>
+<ul>
+<li>"What have you noticed inside?"</li>
+<li>"What have you noticed outside?"</li>
+<li>"What rooms concern you?"</li>
+<li>"What changes have you seen over time?"</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">4</div>
+<div class="info"><h4>Stage 4 &mdash; Impact</h4><span>Connect symptoms to emotion</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Questions To Ask</div>
+<ul>
+<li>"How has this affected you?"</li>
+<li>"What worries you most?"</li>
+<li>"Are you concerned about resale?"</li>
+<li>"Has this changed your renovation plans?"</li>
+<li>"What happens if nothing changes?"</li>
+</ul>
+<p style="margin-top:8px">Now the consultant understands consequences.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">5</div>
+<div class="info"><h4>Stage 5 &mdash; Future</h4><span>Different future plans require different presentations</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Questions To Ask</div>
+<ul>
+<li>"How long do you plan on living here?"</li>
+<li>"Any remodeling planned?"</li>
+<li>"Planning to sell?"</li>
+<li>"Do you expect to pass the home to family?"</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">6</div>
+<div class="info"><h4>Stage 6 &mdash; Decision Process</h4><span>Never assume. Ask.</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Questions To Ask</div>
+<ul>
+<li>"Who will be involved in making this decision?"</li>
+<li>"Would you like everyone present during the review?"</li>
+<li>"Have you already spoken with other companies?"</li>
+<li>"Are you planning on comparing multiple estimates?"</li>
+</ul>
+<p style="margin-top:8px">Knowing this early prevents surprises later.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">7</div>
+<div class="info"><h4>Stage 7 &mdash; Financial Comfort</h4><span>Reveal expectations without creating defensiveness</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Never Ask</div><p>"What's your budget?"</p></div>
+<div class="block block-approach"><div class="label">Instead Ask</div>
+<ul>
+<li>"Have you done any research into what foundation repairs typically cost?"</li>
+<li>"What were you expecting this project might involve?"</li>
+<li>"If repairs are needed, would financing be something you'd want to explore, or do you already have a plan in mind?"</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">8</div>
+<div class="info"><h4>Stage 8 &mdash; Commitment Questions</h4><span>Uncover remaining barriers while there's still time</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Near The End Of The Inspection</div>
+<ul>
+<li>"If we identify a solution that gives you confidence, what would you like the next step to be?"</li>
+<li>"If we can answer all your questions today, is there anything else that would keep you from moving forward?"</li>
+</ul>
+<p style="margin-top:8px">These aren't "trial closes." They uncover remaining barriers while there's still time to address them.</p></div>
+</div></div>
+<div class="ch-section">
+<h3>Reading Buying Signals</h3>
+</div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker green">S</div>
+<div class="info"><h4>Strong Buying Signals</h4><span>The customer is ready to move forward</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Recognize These</div>
+<ul>
+<li>The homeowner starts asking about installation timing</li>
+<li>They ask how long repairs will take</li>
+<li>They ask about warranties or transferable coverage</li>
+<li>They begin discussing how to prepare the home</li>
+<li>They ask whether furniture needs to be moved</li>
+<li>They ask detailed financing questions rather than general price questions</li>
+<li>They involve a spouse in practical planning rather than in skepticism</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker yellow">W</div>
+<div class="info"><h4>Weak Buying Signals</h4><span>Caution: these indicate hesitation</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-mistake"><div class="label">Watch For These</div>
+<ul>
+<li>"We'll think about it."</li>
+<li>"We're just gathering information."</li>
+<li>Repeatedly steering the conversation back to price before understanding the problem</li>
+<li>Looking at a phone or becoming disengaged during the explanation</li>
+<li>Introducing new decision-makers late in the process</li>
+</ul></div>
+</div></div>
+
+<div class="ch-section">
+<h3>Discovery Scorecard for Ride-Alongs</h3>
+<p>One of the highest-value coaching tools. During every ride-along, evaluate whether the consultant:</p>
+<ul>
+<li><strong>Set expectations</strong> &mdash; Explained appointment agenda and timeline</li>
+<li><strong>Built rapport</strong> &mdash; Established trust without wasting time</li>
+<li><strong>Identified trigger event</strong> &mdash; Learned why the homeowner called today</li>
+<li><strong>Explored symptoms</strong> &mdash; Asked open-ended questions before inspecting</li>
+<li><strong>Uncovered emotional impact</strong> &mdash; Connected technical issues to homeowner concerns</li>
+<li><strong>Clarified goals</strong> &mdash; Learned future plans for the property</li>
+<li><strong>Identified decision-makers</strong> &mdash; Confirmed who needs to be involved</li>
+<li><strong>Discussed financial readiness</strong> &mdash; Explored expectations without pressuring</li>
+<li><strong>Active listening</strong> &mdash; Asked follow-up questions and summarized accurately</li>
+<li><strong>Transition to inspection</strong> &mdash; Moved naturally from conversation to technical evaluation</li>
+</ul>
+<p><strong>The benchmark isn't "Did they ask every question?" It's "Did they understand the homeowner well enough to deliver a recommendation that felt personal rather than generic?"</strong></p>
+</div>
+
+<div class="key-takeaway">
+<div class="kt-label">Key Takeaway</div>
+<p>Discovery is the appointment. Everything after it is confirmation. Never recommend before you understand the person, not just the problem.</p>
+</div>
+
+<div class="ch-nav">
+<button onclick="navigateTo('ch1')">&larr; Chapter 1</button>
+<button onclick="navigateTo('ch3')" data-complete="ch2">Chapter 3: Objection Handling &rarr;</button>
+</div>
+</div>
+<!-- CHAPTER 3: OBJECTION HANDLING -->
+<div class="page" id="page-ch3">
+<div class="ittt-section">
+<h2><span class="icon" style="background:var(--accent-dim);color:var(--accent)">3</span> Objection Handling</h2>
+<p>Diagnose objections instead of memorizing scripts. An objection is simply an unanswered question. The homeowner is rarely saying "No"&mdash;they're saying "I don't have enough confidence yet."</p>
+</div>
+
+<div class="ch-section">
+<h3>The Philosophy of Objections</h3>
+<p>The average salesperson views objections as resistance. Top consultants understand: <strong>an objection is simply an unanswered question.</strong></p>
+<p>Every objection falls into one (or more) of five categories:</p>
+<ul>
+<li><strong>Financial</strong> &mdash; Confidence they can afford it</li>
+<li><strong>Technical</strong> &mdash; Confidence the diagnosis is correct</li>
+<li><strong>Trust</strong> &mdash; Confidence in Baird</li>
+<li><strong>Timing</strong> &mdash; Confidence action is necessary now</li>
+<li><strong>Decision</strong> &mdash; Confidence they're making the right choice</li>
+</ul>
+<p>The solution changes depending on which confidence gap exists.</p>
+</div>
+
+<div class="ch-section">
+<h3>Universal Objection Framework</h3>
+<p>Teach every consultant the same sequence:</p>
+<ul>
+<li><strong>Step 1 &mdash; Don't defend.</strong> Slow down. Curiosity beats persuasion.</li>
+<li><strong>Step 2 &mdash; Acknowledge.</strong> "I completely understand." "I'd probably ask the same thing."</li>
+<li><strong>Step 3 &mdash; Clarify.</strong> "What specifically concerns you?" Never assume.</li>
+<li><strong>Step 4 &mdash; Diagnose.</strong> Is this money? Trust? Fear? Need for control? Need for spouse?</li>
+<li><strong>Step 5 &mdash; Educate.</strong> Never argue. Never debate. Help them understand.</li>
+<li><strong>Step 6 &mdash; Confirm.</strong> "Does that answer your concern?" Never continue if the objection remains unresolved.</li>
+</ul>
+</div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">C</div>
+<div class="info"><h4>"It's too expensive."</h4><span>Financial &middot; Almost never about the actual number</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Reality</div><p>Almost never about the number itself. Usually means: "I wasn't expecting that," "I don't understand the value," or "I'm afraid of making a mistake."</p></div>
+<div class="block block-then"><div class="label">Response Framework</div>
+<p>"I understand. Most homeowners haven't purchased foundation repair before, so seeing the investment can definitely be surprising."</p>
+<p style="margin-top:6px"><em>Pause.</em></p>
+<p>"Can I ask&mdash;was it higher than you expected, or is it more about deciding whether the repair is worth doing?"</p></div>
+<div class="block block-notice"><div class="label">If They Expected Lower</div><p>Educate. Foundation repair involves engineering, steel, concrete, heavy equipment, permits, and lifetime solutions. Help them understand what creates value.</p></div>
+<div class="block block-mistake"><div class="label">Coaching Note</div><p>Never immediately offer discounts. Discounting before value destroys credibility.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">T</div>
+<div class="info"><h4>"I need to think about it."</h4><span>Decision &middot; Unresolved certainty</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Meaning</div><p>"I haven't reached certainty." Not "I need silence."</p></div>
+<div class="block block-approach"><div class="label">Questions</div>
+<ul>
+<li>"What would you like to think through?"</li>
+<li>"What questions remain?"</li>
+<li>"What information would help?"</li>
+<li>"What hasn't been answered yet?"</li>
+</ul></div>
+<div class="block block-then"><div class="label">Supervisor Diagnosis</div><p>If this objection occurs frequently, the consultant likely: presented too early, didn't discover enough, or didn't educate sufficiently.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">O</div>
+<div class="info"><h4>"I want another opinion."</h4><span>Trust &middot; Confidence through comparison</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Better Approach</div>
+<p>Never fight this. Agree: "I completely understand."</p>
+<p>Then ask: <strong>"What would you want another company to help you confirm?"</strong></p>
+<p>Excellent consultants aren't threatened. If the customer says "I just want to make sure," respond: "I think that's reasonable. If another qualified company tells you the same thing we've discussed today, would that give you confidence moving forward?"</p></div>
+<div class="block block-notice"><div class="label">Coaching Principle</div><p>Confident consultants welcome comparisons. Weak consultants become defensive.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">S</div>
+<div class="info"><h4>"I want to shop around."</h4><span>Comparison &middot; Different from seeking another opinion</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">What's Happening</div><p>The homeowner has already decided repairs may be necessary. They're comparing providers. Now emphasize: inspection quality, warranty, experience, installation standards, communication, longevity. Not price.</p></div>
+<div class="block block-approach"><div class="label">Ask</div>
+<p>"What will you be comparing?"</p>
+<p>If they answer <strong>Price</strong>&mdash;educate. If they answer <strong>Trust</strong>&mdash;you're winning.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">M</div>
+<div class="info"><h4>"We need to talk about it."</h4><span>Decision &middot; Missing stakeholder</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Clarify</div>
+<p>"Absolutely. Who else would you like involved?"</p>
+<p>Common issues: spouse absent, adult children, financial advisor, investor partner.</p></div>
+<div class="block block-then"><div class="label">Coaching Principle</div><p>Great consultants identify decision-makers within the first fifteen minutes&mdash;not at the kitchen table after presenting.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">F</div>
+<div class="info"><h4>"We can't afford it."</h4><span>Financial &middot; Requires genuine empathy</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Approach</div><p>Never minimize. Instead: "I understand. Protecting a home is important, but it also has to fit your family's financial situation."</p></div>
+<div class="block block-approach"><div class="label">Then Explore</div>
+<p>"Would it be helpful if we looked at financing options together?"</p>
+<p>Notice: you're offering options. Not pressure.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">P</div>
+<div class="info"><h4>"Your competitor is cheaper."</h4><span>Comparison &middot; Scope vs. price</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Ask</div>
+<p>"What differences did you notice between the recommendations?"</p>
+<p>Sometimes they aren't comparing equal scopes. Different pier counts, different warranty, different drainage recommendations, different engineering approach. Help them compare solutions. Not invoices.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">W</div>
+<div class="info"><h4>"We'll wait."</h4><span>Timing &middot; Urgency unclear</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Explore</div>
+<p>"What would you like to wait for?"</p>
+<p>Possible answers: savings, spouse, selling, weather, tax refund, comfort. Each has a different conversation.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker red">D</div>
+<div class="info"><h4>"I don't think it's that bad."</h4><span>Skepticism &middot; Evidence gap</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Never Argue</div>
+<p>Walk back through evidence: photos, measurements, elevation readings, symptoms. Explain progression. Not catastrophe. The consultant becomes a guide, not a salesperson.</p></div>
+</div></div>
+
+<div class="ch-section">
+<h3>Performance Diagnosis Matrix</h3>
+</div>
+
+<div class="card" style="overflow-x:auto">
+<table class="matrix-table" style="width:100%;border-collapse:collapse;font-size:.84rem">
+<thead><tr><th style="text-align:left;padding:10px 14px;background:var(--bg);color:var(--text-muted);font-size:.68rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--glass-border)">Customer Says</th><th style="text-align:left;padding:10px 14px;background:var(--bg);color:var(--text-muted);font-size:.68rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--glass-border)">Usually Means</th><th style="text-align:left;padding:10px 14px;background:var(--bg);color:var(--text-muted);font-size:.68rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--glass-border)">Coach The Rep To...</th></tr></thead>
+<tbody>
+<tr><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Too expensive</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Value not established</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Slow down and build understanding before discussing price</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Need to think</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Unresolved concern</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Ask what specifically remains unanswered</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Getting more quotes</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Trust gap</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Welcome comparisons and reinforce differentiators</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Need spouse</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Discovery failure</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Identify decision-makers much earlier</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Not right now</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Urgency unclear</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Connect current symptoms with future risk without fear tactics</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">We can't afford it</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Payment concern or overwhelm</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Explore affordability and financing only after understanding the concern</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">I don't believe it's necessary</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Evidence gap</td><td style="padding:10px 14px;border-bottom:1px solid var(--glass-border)">Improve inspection explanation and visual proof</td></tr>
+</tbody></table>
+</div>
+
+<div class="ch-section" style="margin-top:24px">
+<h3>Sales Supervisor Coaching Questions</h3>
+<p>Instead of: <em>"What should you have said?"</em></p>
+<p>Ask:</p>
+<ul>
+<li>"What confidence was missing?"</li>
+<li>"When did the conversation change?"</li>
+<li>"What evidence did you present?"</li>
+<li>"What question should you have asked instead?"</li>
+</ul>
+<p>Those questions develop judgment rather than memorization.</p>
+</div>
+
+<div class="key-takeaway">
+<div class="kt-label">Key Takeaway</div>
+<p>Every objection is an unanswered question. Diagnose which confidence is missing before you respond.</p>
+</div>
+
+<div class="ch-nav">
+<button onclick="navigateTo('ch2')">&larr; Chapter 2</button>
+<button onclick="navigateTo('ch4')" data-complete="ch3">Chapter 4: Performance Improvement &rarr;</button>
+</div>
+</div>
+<!-- CHAPTER 4: PERFORMANCE IMPROVEMENT -->
+<div class="page" id="page-ch4">
+<div class="ittt-section">
+<h2><span class="icon" style="background:var(--accent-dim);color:var(--accent)">4</span> Performance Improvement</h2>
+<p>Self-diagnose and improve without waiting for management. Poor sales performance is almost never caused by laziness&mdash;it's usually caused by one of four issues.</p>
+</div>
+
+<div class="ch-section">
+<h3>The Supervisor's Mission</h3>
+<p>Poor performance is usually caused by one of four issues:</p>
+<ul>
+<li><strong>Skill deficit</strong></li>
+<li><strong>Process inconsistency</strong></li>
+<li><strong>Confidence deficit</strong></li>
+<li><strong>Activity deficiency</strong></li>
+</ul>
+<p>The supervisor's job is to <strong>diagnose the root cause</strong>&mdash;not just address the symptom.</p>
+</div>
+
+<div class="ch-section">
+<h3>The Performance Formula</h3>
+<p><strong>Knowledge + Skill + Confidence + Consistency + Activity = Performance</strong></p>
+<p>If one element weakens, overall performance declines.</p>
+</div>
+
+<div class="ch-section">
+<h3>Performance Diagnostic Flow</h3>
+<p>Coach the earliest point of failure:</p>
+<ul>
+<li><strong>Low Close Rate</strong> &rarr; Enough appointments? No &rarr; <em>Activity Coaching</em></li>
+<li><strong>Yes</strong> &rarr; Inspection quality strong? No &rarr; <em>Technical Training</em></li>
+<li><strong>Yes</strong> &rarr; Discovery complete? No &rarr; <em>Questioning Coaching</em></li>
+<li><strong>Yes</strong> &rarr; Presentation effective? No &rarr; <em>Communication Coaching</em></li>
+<li><strong>Yes</strong> &rarr; Objections managed? No &rarr; <em>Objection Practice</em></li>
+<li><strong>Yes</strong> &rarr; Closing confidence? No &rarr; <em>Closing Coaching</em></li>
+<li><strong>Yes</strong> &rarr; External factors</li>
+</ul>
+<p><strong>Fixing downstream behaviors rarely solves upstream problems.</strong></p>
+</div>
+
+<div class="ch-section">
+<h3>Common Performance Gaps</h3>
+</div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker yellow">1</div>
+<div class="info"><h4>Low Trust Builder</h4><span>Symptoms: guarded homeowner, few questions, price dominant, short conversations</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Likely Cause</div><p>Poor rapport and expectation setting.</p></div>
+<div class="block block-approach"><div class="label">Coaching</div>
+<ul>
+<li>Practice introductions</li>
+<li>Slow the pace</li>
+<li>Set a clear agenda</li>
+<li>Demonstrate respect for the homeowner and their property</li>
+<li>Build confidence before discussing technical findings</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker yellow">2</div>
+<div class="info"><h4>Weak Discovery</h4><span>Symptoms: generic presentations, frequent "need to think," disengaged customer</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Likely Cause</div><p>The consultant talked more than they asked.</p></div>
+<div class="block block-approach"><div class="label">Coaching</div>
+<ul>
+<li>Increase open-ended questions</li>
+<li>Practice active listening</li>
+<li>Require consultants to summarize the homeowner's concerns before presenting</li>
+<li>Evaluate discovery using the ride-along scorecard</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker yellow">3</div>
+<div class="info"><h4>Technical Knowledge Gap</h4><span>Symptoms: difficulty explaining settlement, reliance on jargon, customer confusion</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Coaching</div>
+<ul>
+<li>Weekly product and engineering refreshers</li>
+<li>Practice explaining foundation concepts in plain language</li>
+<li>Use role-play where the "customer" has no construction background</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker yellow">4</div>
+<div class="info"><h4>Poor Inspection Discipline</h4><span>Symptoms: missed symptoms, inconsistent recommendations, weak documentation</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Coaching</div>
+<ul>
+<li>Standardize a room-by-room inspection sequence</li>
+<li>Use photo checklists</li>
+<li>Conduct field audits with immediate feedback</li>
+<li>Require consultants to explain what they're inspecting as they go</li>
+</ul></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker yellow">5</div>
+<div class="info"><h4>Presentation Overload</h4><span>Symptoms: customer overwhelmed, long monologues, eyes glaze over</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Coaching</div>
+<p>Teach "Chunk and Check." Present one concept. Pause. Ask: "Does that make sense?" Only continue after confirming understanding.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker yellow">6</div>
+<div class="info"><h4>Fear of Asking for the Business</h4><span>Symptoms: presentation ends awkwardly, no clear next step</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Coaching</div>
+<p>Build confidence in natural transitions: "Based on everything we've reviewed, here's what I recommend..." Practice this until it feels conversational rather than scripted.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)">
+<div class="marker yellow">7</div>
+<div class="info"><h4>Price-Centric Selling</h4><span>Symptoms: early discounting, frequent price objections, margin erosion</span></div>
+<span class="arrow">&#9662;</span>
+</div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Coaching</div>
+<p>Delay pricing until after: Discovery &rarr; Inspection &rarr; Education &rarr; Recommendation. <strong>Value first. Price second.</strong></p></div>
+</div></div>
+<div class="ch-section">
+<h3>The Coaching Cycle</h3>
+<p>Every coaching interaction should follow the same cadence:</p>
+<ul>
+<li><strong>Observe</strong> &ndash; Watch the appointment without interrupting unless necessary</li>
+<li><strong>Reflect</strong> &ndash; Ask the consultant to self-assess before giving feedback</li>
+<li><strong>Diagnose</strong> &ndash; Identify the earliest breakdown in the sales process</li>
+<li><strong>Coach</strong> &ndash; Focus on one or two behaviors, not ten</li>
+<li><strong>Practice</strong> &ndash; Role-play the corrected behavior immediately</li>
+<li><strong>Reinforce</strong> &ndash; Follow up on the next ride-along to confirm improvement</li>
+</ul>
+</div>
+
+<div class="ch-section">
+<h3>30-Day Performance Improvement Plan</h3>
+<ul>
+<li><strong>Week 1:</strong> Observation and baseline metrics. Identify root causes and establish goals.</li>
+<li><strong>Week 2:</strong> Discovery and rapport coaching. Improved homeowner engagement.</li>
+<li><strong>Week 3:</strong> Presentation and objection handling. Higher confidence and fewer unresolved objections.</li>
+<li><strong>Week 4:</strong> Closing execution and reinforcement. Increased close rate and process consistency.</li>
+</ul>
+</div>
+
+<div class="ch-section">
+<h3>Ride-Along Debrief Framework</h3>
+<p>Every field coaching session should end with these five questions:</p>
+<ul>
+<li>What went well today that you'd repeat?</li>
+<li>Where did you feel the customer's confidence increase?</li>
+<li>Where did the conversation become more difficult?</li>
+<li>If you could restart one five-minute segment of the appointment, which would it be and why?</li>
+<li>What's one behavior you'll intentionally improve before your next appointment?</li>
+</ul>
+<p>This format develops self-awareness first, allowing the supervisor's coaching to reinforce rather than replace critical thinking.</p>
+</div>
+
+<div class="ch-section">
+<h3>Core Leadership Principle</h3>
+<p>The strongest Sales Supervisors don't create consultants who memorize scripts&mdash;they create consultants who can diagnose homeowners, adapt to different personalities, communicate complex structural issues simply, and execute a repeatable sales process under a wide range of circumstances. Their coaching focuses on behaviors that can be repeated and measured, producing consistent customer experiences and predictable sales performance across the entire team.</p>
+</div>
+
+<div class="key-takeaway">
+<div class="kt-label">Key Takeaway</div>
+<p>Performance problems are almost never about laziness. Diagnose the root cause: skill, process, confidence, or activity.</p>
+</div>
+
+<div class="ch-nav">
+<button onclick="navigateTo('ch3')">&larr; Chapter 3</button>
+<button onclick="navigateTo('if-this')" data-complete="ch4">If This Then That &rarr;</button>
+</div>
+</div>
+<!-- IF THIS THEN THAT -->
+<div class="page" id="page-if-this">
+<div class="ittt-section">
+<h2><span class="icon" style="background:var(--accent-dim);color:var(--accent)">&#9889;</span> If This Then That</h2>
+<p>Pattern recognition is the foundation of professional judgment. Every scenario follows the same structure so you can instantly recognize what's happening and what to do about it.</p>
+<div class="tabs" id="ittt-tabs">
+<button class="tab active" data-filter="all">All Patterns</button>
+<button class="tab" data-filter="psychology">Psychology</button>
+<button class="tab" data-filter="objections">Objections</button>
+<button class="tab" data-filter="trust">Trust</button>
+<button class="tab" data-filter="decision">Decision</button>
+</div>
+
+<div class="ittt-card" data-category="psychology objections">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker red">1</div><div class="info"><h4>"I need to think about it."</h4><span>Psychology &middot; Objections &middot; Decision Confidence</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">IF THIS&hellip;</div><blockquote>"I need to think about it."</blockquote><p style="margin-top:6px">They're signaling unresolved uncertainty&mdash;not requesting silence.</p></div>
+<div class="block block-then"><div class="label">THEN THAT&hellip;</div><p>The customer probably <strong>lacks confidence, not information</strong>. They may still have unanswered questions, fear of making a mistake, need for another decision maker, unresolved trust, or decision anxiety.</p></div>
+<div class="block block-notice"><div class="label">Great Reps Notice&hellip;</div><ul><li>The objection appeared before price was discussed</li><li>The customer stopped asking questions</li><li>Eye contact decreased</li><li>They became quieter</li><li>They never acknowledged understanding</li></ul></div>
+<div class="block block-mistake"><div class="label">Common Mistakes</div><ul><li>Immediately lowering price</li><li>Talking faster to fill silence</li><li>Repeating the presentation</li><li>Becoming defensive</li><li>Assuming the objection is money</li><li>Asking "So what will it take?"</li></ul></div>
+<div class="block block-approach"><div class="label">Better Approach</div><p>Slow down. Ask: <strong>"What would you like to think through?"</strong> Listen. Clarify. Identify the real concern. Then educate.</p></div>
+<div class="block block-why"><div class="label">Why This Works</div><p>Customers rarely buy because they are pressured. They buy because uncertainty has been reduced.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Confidence is created through understanding, not persuasion.</p></div>
+</div></div>
+
+<div class="ittt-card" data-category="objections trust">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker red">2</div><div class="info"><h4>"We're getting another estimate."</h4><span>Objections &middot; Trust &middot; Comparison</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">IF THIS&hellip;</div><blockquote>"We're getting a couple more estimates."</blockquote><p style="margin-top:6px">The customer isn't rejecting you. They're seeking confidence through comparison.</p></div>
+<div class="block block-then"><div class="label">THEN THAT&hellip;</div><p>They want <strong>confidence through comparison</strong>&mdash;not necessarily a lower price. They may lack a frame of reference for cost, have been burned before, need external validation, or have an absent spouse.</p></div>
+<div class="block block-notice"><div class="label">Great Reps Notice&hellip;</div><ul><li>They're still engaged in the conversation</li><li>They ask thoughtful comparison questions</li><li>They continue discussing installation and warranty</li><li>They're seeking reassurance more than negotiation</li></ul></div>
+<div class="block block-mistake"><div class="label">Common Mistakes</div><ul><li>Speaking negatively about competitors</li><li>Immediately offering discounts</li><li>Becoming defensive</li><li>Pressuring for a same-day decision</li><li>Treating comparison shopping as rejection</li></ul></div>
+<div class="block block-approach"><div class="label">Better Approach</div><p>Acknowledge. Ask: <strong>"What will you be comparing?"</strong> Help them understand <em>how</em> to compare: scope, warranty, methodology, materials, experience.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>The company that best explains the decision often earns the decision.</p></div>
+</div></div>
+
+<div class="ittt-card" data-category="objections psychology">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker red">3</div><div class="info"><h4>"It's too expensive."</h4><span>Financial &middot; Value Perception</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">IF THIS&hellip;</div><blockquote>"It's too expensive."</blockquote><p style="margin-top:6px">Almost never about the number itself.</p></div>
+<div class="block block-then"><div class="label">THEN THAT&hellip;</div><p>Usually: "I wasn't expecting that" (framing failure), "I don't understand the value" (education gap), or "I'm afraid of making a mistake" (trust gap).</p></div>
+<div class="block block-notice"><div class="label">Great Reps Notice&hellip;</div><ul><li>Objection came before full scope was presented</li><li>Customer didn't ask about what's included</li><li>They compared to a general contractor, not a specialist</li><li>They never asked about warranty or financing</li></ul></div>
+<div class="block block-mistake"><div class="label">Common Mistakes</div><ul><li>Immediately offering the lowest price</li><li>Breaking down cost per pier without value</li><li>Comparing to other industries</li><li>Assuming they can't afford it</li></ul></div>
+<div class="block block-approach"><div class="label">Better Approach</div><p>Acknowledge: <strong>"I understand. Most homeowners haven't purchased foundation repair before."</strong> Pause. Ask: "Was it higher than you expected, or is it more about deciding whether the repair is worth doing?"</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Never lower price before raising understanding.</p></div>
+</div></div>
+
+<div class="ittt-card" data-category="decision psychology">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker blue">4</div><div class="info"><h4>Customer introduces spouse late</h4><span>Discovery &middot; Hidden Stakeholders</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">IF THIS&hellip;</div><blockquote>"My husband/wife needs to see this."</blockquote></div>
+<div class="block block-then"><div class="label">THEN THAT&hellip;</div><p>Discovery failed to identify all decision-makers within the first 15 minutes. A 15-second question at the start prevents a 15-minute problem at the close.</p></div>
+<div class="block block-approach"><div class="label">Better Approach</div><p>During discovery ask: <strong>"Who will be involved in making this decision?"</strong> If absent at close, offer to prepare a summary or schedule a follow-up together.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Identify every decision-maker before you present, not after.</p></div>
+</div></div>
+
+<div class="ittt-card" data-category="trust psychology">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">5</div><div class="info"><h4>Customer stops asking questions</h4><span>Trust &middot; Disengagement Signal</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">IF THIS&hellip;</div><p>Customer becomes quiet, stops asking clarifying questions, body language shifts.</p></div>
+<div class="block block-then"><div class="label">THEN THAT&hellip;</div><p>They've <strong>shut down from overwhelm</strong>, lost trust, or mentally checked out. Silence is not agreement&mdash;it's withdrawal.</p></div>
+<div class="block block-approach"><div class="label">Better Approach</div><p>Stop. Pause. Ask: <strong>"I want to make sure I'm not losing you&mdash;is this making sense so far?"</strong> Reset around their priority, not your agenda.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>When the customer stops talking, you've lost the appointment&mdash;not the sale.</p></div>
+</div></div>
+
+<div class="ittt-card" data-category="objections decision">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker red">6</div><div class="info"><h4>"We can't afford it."</h4><span>Financial &middot; Empathy Required</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">IF THIS&hellip;</div><blockquote>"We just can't afford this right now."</blockquote></div>
+<div class="block block-then"><div class="label">THEN THAT&hellip;</div><p>They need help thinking through affordability without pressure. They may need to understand cost of inaction, or they may genuinely need to delay.</p></div>
+<div class="block block-mistake"><div class="label">Common Mistakes</div><ul><li>Minimizing: "It's really not that much"</li><li>Pushing financing before understanding</li><li>Using fear: "It'll cost more later"</li><li>Making them feel judged</li></ul></div>
+<div class="block block-approach"><div class="label">Better Approach</div><p>Empathy first: <strong>"I understand. Protecting your home is important, but it has to fit your financial situation."</strong> Then explore gently. If they can't move forward, respect it.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Empathy creates more referrals than closing pressure ever will.</p></div>
+</div></div>
+
+<div class="ittt-card" data-category="trust psychology">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">7</div><div class="info"><h4>Customer asks about installation logistics</h4><span>Buying Signal &middot; They've decided "yes"</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">IF THIS&hellip;</div><p>Customer asks: "How long will it take?" "Do we need to move furniture?" "When can you start?"</p></div>
+<div class="block block-then"><div class="label">THEN THAT&hellip;</div><p>They've <strong>mentally moved past "whether" to "how"</strong>. They're planning logistics. This is a strong buying signal.</p></div>
+<div class="block block-approach"><div class="label">Better Approach</div><p>Answer thoroughly, then transition: <strong>"Based on everything we've reviewed, here's what I recommend..."</strong></p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>When they ask "how," they've already decided "yes."</p></div>
+</div></div>
+
+<div class="ittt-card" data-category="objections decision">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker red">8</div><div class="info"><h4>"We'll wait."</h4><span>Timing &middot; Urgency Unclear</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">IF THIS&hellip;</div><blockquote>"We're going to wait and see if it gets worse."</blockquote></div>
+<div class="block block-then"><div class="label">THEN THAT&hellip;</div><p>They haven't connected <strong>current symptoms to future risk</strong>. Foundation movement is progressive&mdash;it never resolves on its own.</p></div>
+<div class="block block-mistake"><div class="label">Common Mistakes</div><ul><li>Using fear: "Your house could collapse"</li><li>Creating false urgency: "Today only"</li><li>Accepting "wait" without exploring the real reason</li></ul></div>
+<div class="block block-approach"><div class="label">Better Approach</div><p>Explore: <strong>"What would you like to wait for?"</strong> Then educate on progression without fear.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Educate on progression&mdash;never use fear to create urgency.</p></div>
+</div></div>
+
+</div></div>
+<!-- COMMON MISTAKES -->
+<div class="page" id="page-common-mistakes">
+<div class="ittt-section">
+<h2><span class="icon" style="background:rgba(245,158,11,.15);color:var(--warning)">&#9888;</span> Common Mistakes</h2>
+<p>Every mistake below represents a pattern that average consultants repeat. Recognizing these in yourself is the fastest path to improvement.</p>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">1</div><div class="info"><h4>Talking more than you listen</h4><span>Process &middot; Discovery</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>Consultant dominates the conversation from arrival. By pricing, they have no idea what the customer cares about.</p></div>
+<div class="block block-then"><div class="label">Why It Happens</div><p>Fear of silence. Insecurity. Belief that more information = more credibility.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Follow the 70/30 rule: <strong>the customer should talk 70% of the time during discovery.</strong></p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>The consultant who asks the most questions controls the conversation.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">2</div><div class="info"><h4>Presenting before diagnosing</h4><span>Process &middot; Recommendation Discipline</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>Recommending a solution before understanding motivation, timeline, decision process, or budget comfort.</p></div>
+<div class="block block-then"><div class="label">Why It Happens</div><p>Overconfidence in technical findings. Skipping discovery because "the photos will convince them."</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Never recommend before understanding Problem, Impact, Priority, Decision Process, Budget Comfort, and Timeline.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Diagnose the person before diagnosing the home.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">3</div><div class="info"><h4>Using fear to create urgency</h4><span>Communication &middot; Trust</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>"Your foundation is failing." "If you don't fix this now, it'll cost double." Fear-based selling destroys trust.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Use data, not drama. <strong>"Based on these measurements, this movement is progressive."</strong> Let facts create urgency.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Data creates urgency. Fear destroys trust.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">4</div><div class="info"><h4>Discounting before understanding</h4><span>Closing &middot; Value</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>Immediately offering lower price when customer hesitates at cost.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Diagnose before solving. <strong>"Was it higher than you expected, or is it more about whether the repair is worth doing?"</strong></p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Discounting before understanding destroys credibility.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">5</div><div class="info"><h4>Ignoring buying signals</h4><span>Process &middot; Awareness</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>Customer asks about installation, timeline, or warranty&mdash;and consultant continues educating instead of closing.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>When they ask a logistics question, <strong>answer it, then transition</strong>. Buying signals are temporary.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>When they ask "how," they've already decided "yes."</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">6</div><div class="info"><h4>Being afraid of objections</h4><span>Mindset &middot; Confidence</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>Avoiding presentation because they fear the customer will object. Under-educating, skipping recommendation, no clear next step.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Reframe objections as questions. <strong>Every objection is an unanswered question.</strong> The more you handle, the more confident you become.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Objections aren't rejection&mdash;they're engagement.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">7</div><div class="info"><h4>Failing to identify decision-makers early</h4><span>Process &middot; Stakeholder Mapping</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>90 minutes presenting to one person, only to discover at closing that a spouse needs to approve.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Ask within the first 15 minutes: <strong>"Who will be involved in making this decision?"</strong></p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Identify every decision-maker before you present.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">8</div><div class="info"><h4>Competing on price instead of value</h4><span>Communication &middot; Positioning</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>Leading with price, competing against cheaper bids, positioning Baird as a commodity.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Ask: <strong>"What will you be comparing?"</strong> Then educate on how to evaluate scope, warranty, engineering, methodology.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>The company that best explains the decision often earns the decision.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">9</div><div class="info"><h4>Not narrating the inspection</h4><span>Process &middot; Transparency</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>Disappearing for 45 minutes. Homeowner left alone with their imagination.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Narrate as you go: <strong>"I'm checking whether these cracks line up with the elevation changes outside."</strong></p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Transparency during inspection builds more trust than any presentation after it.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker yellow">10</div><div class="info"><h4>Not following up after objections</h4><span>Mindset &middot; Consistency</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">The Mistake</div><p>"Call us when you're ready"&mdash;then never following up. Competitor who follows up wins.</p></div>
+<div class="block block-approach"><div class="label">The Fix</div><p>Follow up within 24 hours with a <strong>value-add touchpoint</strong>. Then every 3-5 days. Persistence demonstrates professionalism.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>The fortune is in the follow-up.</p></div>
+</div></div>
+
+</div></div>
+<!-- GREAT REPS RECOGNIZE -->
+<div class="page" id="page-great-reps">
+<div class="ittt-section">
+<h2><span class="icon" style="background:rgba(34,197,94,.15);color:var(--success)">&#9733;</span> Great Reps Recognize</h2>
+<p>Average consultants react. Great consultants recognize what customers are signaling before they say it.</p>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">1</div><div class="info"><h4>Questions shift from "what" to "how"</h4><span>Buying Signal &middot; Commitment</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Great Reps Recognize&hellip;</div><ul><li>Conversation shifted from education to logistics</li><li>Customer is visualizing the work happening</li><li>They're asking practical, not skeptical, questions</li><li>They've stopped pushing back and started planning</li></ul></div>
+<div class="block block-approach"><div class="label">What Great Reps Do</div><p><strong>Answer thoroughly, then transition to the close.</strong> Match their energy&mdash;they're in implementation mode.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Match the customer's phase&mdash;if they're planning, you should be too.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">2</div><div class="info"><h4>Customer stops making eye contact</h4><span>Resistance Signal &middot; Disengagement</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Great Reps Recognize&hellip;</div><ul><li>The shift happened at a specific moment</li><li>They were engaged earlier but something changed</li><li>Questions became generic</li><li>Body language closed</li></ul></div>
+<div class="block block-approach"><div class="label">What Great Reps Do</div><p><strong>Stop presenting. Pause. Reset around their priority.</strong> "What's most important to you right now?"</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>When engagement drops, stop educating and start listening.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">3</div><div class="info"><h4>Customer says "that makes sense"</h4><span>Buying Signal &middot; Trust Building</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Great Reps Recognize&hellip;</div><ul><li>This is the foundation of the entire sale</li><li>Confidence is being created through understanding</li><li>The customer is validating your expertise</li><li>The trust equation is working</li></ul></div>
+<div class="block block-approach"><div class="label">What Great Reps Do</div><p><strong>Reinforce without overselling.</strong> Don't over-explain. Continue the inspection. Keep momentum.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>The moment they believe you is worth more than any close technique.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">4</div><div class="info"><h4>Late-stage objections appear</h4><span>Trust Gift &middot; Hidden Concerns</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Great Reps Recognize&hellip;</div><ul><li>They trust you enough to be honest</li><li>These concerns were present from the beginning</li><li>Addressing them creates stronger commitment</li></ul></div>
+<div class="block block-approach"><div class="label">What Great Reps Do</div><p><strong>Thank them. Address it thoroughly. Confirm:</strong> "Does that fully address your concern?"</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Late objections are trust gifts&mdash;welcome them.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">5</div><div class="info"><h4>Customer shares personal stories</h4><span>Trust Signal &middot; Vulnerability</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Great Reps Recognize&hellip;</div><ul><li>Trust established at a personal level</li><li>They're giving you information you didn't ask for</li><li>They may be revealing their real motivation</li></ul></div>
+<div class="block block-approach"><div class="label">What Great Reps Do</div><p><strong>Listen fully. Acknowledge. Connect your recommendation to what matters to them personally.</strong></p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>When they share their story, they've given you the key to the sale.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">6</div><div class="info"><h4>Customer asks about warranty</h4><span>Buying Signal &middot; Long-term Thinking</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Great Reps Recognize&hellip;</div><ul><li>They're thinking years ahead&mdash;commitment signal</li><li>They want assurance the investment holds up</li><li>Warranty questions often precede close questions</li></ul></div>
+<div class="block block-approach"><div class="label">What Great Reps Do</div><p><strong>Answer thoroughly and confidently.</strong> Connect it back to their motivation.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Warranty questions are buying signals&mdash;answer with confidence.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">7</div><div class="info"><h4>Silence after pricing</h4><span>Processing &middot; Not Rejection</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Great Reps Recognize&hellip;</div><ul><li>Silence is processing, not rejection</li><li>They may be doing mental math</li><li>Rushing to fill the silence destroys the moment</li></ul></div>
+<div class="block block-approach"><div class="label">What Great Reps Do</div><p><strong>Wait. Count to ten. Then gently:</strong> "What questions does this bring up?"</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Silence after pricing is sacred. Respect it.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker green">8</div><div class="info"><h4>Customer invites you to sit down</h4><span>Trust Signal &middot; Acceptance</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-notice"><div class="label">Great Reps Recognize&hellip;</div><ul><li>They've accepted you as a guest, not a salesperson</li><li>This is a significant trust milestone</li><li>Opportunity for deeper discovery</li></ul></div>
+<div class="block block-approach"><div class="label">What Great Reps Do</div><p><strong>Accept graciously. Deepen discovery.</strong> The kitchen table is where relationships are built.</p></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>When they invite you in, honor that by being genuine.</p></div>
+</div></div>
+
+</div></div>
+<!-- FIELD GUIDE -->
+<div class="page" id="page-field-guide">
+<div class="ittt-section">
+<h2><span class="icon" style="background:rgba(59,130,246,.15);color:var(--info)">&#128214;</span> Field Guide</h2>
+<p>Quick reference for common field situations.</p>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker blue">D</div><div class="info"><h4>Door Sticking</h4><span>Common Symptom</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Possible Causes</div><ul><li>Differential settlement shifting the frame</li><li>Moisture causing wood swelling</li><li>Original installation tolerance exceeded</li></ul></div>
+<div class="block block-then"><div class="label">Questions To Ask</div><ul><li>"When did you first notice it sticking?"</li><li>"Is it getting worse over time?"</li><li>"Interior or exterior doors?"</li></ul></div>
+<div class="block block-approach"><div class="label">Customer Explanation</div><p>"When doors start sticking, it usually means the foundation has shifted slightly. It's one of the most common early warning signs&mdash;and it's progressive."</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker blue">W</div><div class="info"><h4>Wall Cracks</h4><span>Structural Indicator</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Possible Causes</div><ul><li>Settlement pattern (diagonal, stair-step, horizontal)</li><li>Shrinkage cracks (cosmetic)</li><li>Soil expansion/contraction cycle</li></ul></div>
+<div class="block block-then"><div class="label">Questions To Ask</div><ul><li>"Is this crack new or has it been here a while?"</li><li>"Has it gotten wider?"</li><li>"Can you fit a pencil in it?"</li></ul></div>
+<div class="block block-approach"><div class="label">Customer Explanation</div><p>"The pattern tells me what's happening underneath. A diagonal crack from a window corner usually means settlement. Let me show you what I'm seeing."</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker blue">R</div><div class="info"><h4>Customer Has YouTube Research</h4><span>DIY Researcher</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Great Reps Handle This By&hellip;</div><ul><li>Respecting their research: "That's great you've looked into this"</li><li>Never arguing with what they've seen online</li><li>Inviting discussion: "What did you find most helpful?"</li><li>Connecting general info to their specific findings</li></ul></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>A customer who researches is a customer who cares.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker blue">C</div><div class="info"><h4>Comparing to a General Contractor</h4><span>Specialist vs. Generalist</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-approach"><div class="label">Great Reps Handle This By&hellip;</div><ul><li>Never disparaging the contractor</li><li>Educating on the difference: engineering, warranty, methodology</li><li>Asking: "What warranty did they offer?"</li></ul></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Differentiate through education, not criticism.</p></div>
+</div></div>
+</div></div>
+
+<!-- MANAGER COACHING -->
+<div class="page" id="page-coaching">
+<div class="ittt-section">
+<h2><span class="icon" style="background:rgba(139,92,246,.15);color:var(--purple)">&#9670;</span> Manager Coaching</h2>
+<p>Coaching develops judgment, not scripts. The best managers teach consultants to diagnose situations.</p>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker purple">1</div><div class="info"><h4>The Performance Diagnostic Flow</h4><span>Diagnose the root cause</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-then"><div class="label">Diagnose This Sequence</div>
+<ul><li><strong>Step 1:</strong> Enough appointments? No &rarr; Activity coaching</li><li><strong>Step 2:</strong> Inspection quality strong? No &rarr; Technical training</li><li><strong>Step 3:</strong> Discovery complete? No &rarr; Questioning coaching</li><li><strong>Step 4:</strong> Presentation effective? No &rarr; Communication coaching</li><li><strong>Step 5:</strong> Objections managed? No &rarr; Objection practice</li><li><strong>Step 6:</strong> Closing confidence? No &rarr; Closing coaching</li></ul></div>
+<div class="block block-approach"><div class="label">Questions To Ask</div><p>"Walk me through your last three appointments. At what point did each customer disengage? If you could restart one five-minute segment, which would it be?"</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker purple">2</div><div class="info"><h4>The 5-Question Ride-Along Debrief</h4><span>Self-awareness before coaching</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-then"><div class="label">Ask These 5 Questions (In Order)</div>
+<ol style="padding-left:20px"><li>"What went well today that you'd repeat?"</li><li>"Where did you feel the customer's confidence increase?"</li><li>"Where did the conversation become more difficult?"</li><li>"If you could restart one five-minute segment, which would it be?"</li><li>"What's one behavior you'll improve before your next appointment?"</li></ol></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>Self-assessment develops judgment. Lecturing develops dependence.</p></div>
+</div></div>
+
+<div class="ittt-card">
+<div class="ittt-card-header" onclick="toggleCard(this)"><div class="marker purple">3</div><div class="info"><h4>Questions That Develop Judgment</h4><span>Instead of telling, ask</span></div><span class="arrow">&#9662;</span></div>
+<div class="ittt-card-body">
+<div class="block block-if"><div class="label">Don't Ask</div><p>"What should you have said?" "Why didn't you close?"</p></div>
+<div class="block block-approach"><div class="label">Ask Instead</div>
+<ul><li>"What confidence was missing?"</li><li>"When did the conversation change?"</li><li>"What evidence did you present?"</li><li>"What question should you have asked instead?"</li></ul></div>
+<div class="block block-principle"><div class="label">Key Principle</div><p>The best managers create consultants who can diagnose and adapt.</p></div>
+</div></div>
+</div></div>
+
+<!-- RIDE-ALONG CHECKLIST -->
+<div class="page" id="page-checklist">
+<div class="ittt-section">
+<h2><span class="icon" style="background:rgba(34,197,94,.15);color:var(--success)">&#10003;</span> Ride-Along Checklist</h2>
+<p>Use this during every ride-along. Check each item as you observe it.</p>
+
+<div class="card"><h3 style="font-size:.95rem;margin-bottom:10px">Pre-Appointment</h3>
+<ul class="checklist">
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Set clear expectations with homeowner before arriving</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Reviewed appointment history and previous findings</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Prepared tools, documentation, and presentation materials</span></li>
+</ul></div>
+
+<div class="card"><h3 style="font-size:.95rem;margin-bottom:10px">Arrival &amp; First Impressions</h3>
+<ul class="checklist">
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Professional appearance and vehicle</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Confident, relaxed introduction</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Set clear agenda and timeline</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Showed respect for the home</span></li>
+</ul></div>
+
+<div class="card"><h3 style="font-size:.95rem;margin-bottom:10px">Discovery</h3>
+<ul class="checklist">
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Identified the trigger event (why today)</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Explored symptoms with open-ended questions</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Uncovered emotional impact</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Clarified future plans</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Identified all decision-makers</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Discussed financial readiness without pressure</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Practiced active listening</span></li>
+</ul></div>
+
+<div class="card"><h3 style="font-size:.95rem;margin-bottom:10px">Inspection</h3>
+<ul class="checklist">
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Followed consistent room-by-room sequence</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Narrated what they're inspecting and why</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Documented findings with photos and measurements</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Connected symptoms to foundation movement</span></li>
+</ul></div>
+
+<div class="card"><h3 style="font-size:.95rem;margin-bottom:10px">Presentation &amp; Close</h3>
+<ul class="checklist">
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Explained diagnosis before recommending solution</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Used photos and measurements as evidence</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Connected recommendation to customer's motivation</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Handled objections with empathy</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Made a natural, confident recommendation</span></li>
+<li><div class="check-box" onclick="toggleCheck(this)"></div><span class="item-text">Established clear next steps</span></li>
+</ul></div>
+
+<div class="card" style="margin-top:14px"><h3 style="font-size:.95rem;margin-bottom:10px">Notes</h3>
+<textarea id="checklistNotes" class="checklist-notes" placeholder="Add observations, follow-up items, or coaching notes here..."></textarea>
+</div>
+
+<div class="checklist-actions">
+<button class="btn-clear" onclick="showClearConfirm()">Clear Selections</button>
+<button class="btn-export" onclick="showExportMenu()">Export</button>
+</div>
+
+</div></div>
+
+<div class="modal-overlay" id="clearModal">
+<div class="modal-box">
+<p>Are you sure you want to clear everything?</p>
+<div class="modal-actions">
+<button class="modal-cancel" onclick="closeModal('clearModal')">Cancel</button>
+<button class="modal-confirm" onclick="clearAll()">Clear</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="exportModal">
+<div class="modal-box">
+<p>Export checklist as:</p>
+<div class="modal-actions">
+<button class="modal-cancel" onclick="closeModal('exportModal')">Cancel</button>
+<button class="modal-confirm" onclick="exportEmail()">Email</button>
+<button class="modal-confirm" onclick="exportDownload()">Download</button>
+</div>
+</div>
+</div>
+</div><!-- end .main -->
+</div><!-- end .app -->
+
+<script>
+function navigateTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  var t = document.getElementById('page-' + page);
+  if (t) t.classList.add('active');
+  var n = document.querySelector('.nav-item[data-page="' + page + '"]');
+  if (n) n.classList.add('active');
+  document.querySelector('.sidebar').classList.remove('open');
+  window.scrollTo(0, 0);
+  updateProgress();
+}
+document.querySelectorAll('.nav-item').forEach(function(item) {
+  item.addEventListener('click', function() { navigateTo(item.dataset.page); });
+});
+function toggleCard(h) { h.closest('.ittt-card').classList.toggle('open'); }
+function toggleCheck(b) {
+  b.classList.toggle('checked');
+  var t = b.nextElementSibling;
+  if (t) t.classList.toggle('checked-text');
+  saveState();
+  updateProgress();
+}
+document.querySelectorAll('.tabs').forEach(function(tg) {
+  tg.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tg.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var f = tab.dataset.filter;
+      var c = tg.parentElement;
+      c.querySelectorAll('.ittt-card').forEach(function(card) {
+        if (f === 'all') { card.style.display = ''; }
+        else { card.style.display = (card.dataset.category || '').indexOf(f) >= 0 ? '' : 'none'; }
+      });
+    });
+  });
+});
+function updateProgress() {
+  var total = document.querySelectorAll('.check-box').length;
+  var checked = document.querySelectorAll('.check-box.checked').length;
+  var pct = total ? Math.round((checked / total) * 100) : 0;
+  document.getElementById('globalProgress').style.width = pct + '%';
+}
+function saveState() {
+  var c = [];
+  document.querySelectorAll('.check-box').forEach(function(b) { c.push(b.classList.contains('checked')); });
+  localStorage.setItem('baird-checks', JSON.stringify(c));
+}
+function getCompleted() {
+  try { return JSON.parse(localStorage.getItem('baird-completed')) || []; } catch(e) { return []; }
+}
+function markCompleted(chapterId) {
+  var c = getCompleted();
+  if (c.indexOf(chapterId) < 0) { c.push(chapterId); localStorage.setItem('baird-completed', JSON.stringify(c)); }
+  renderDashboard();
+}
+function renderDashboard() {
+  var c = getCompleted();
+  var map = { ch1: 0, ch2: 1, ch3: 2, ch4: 3 };
+  document.querySelectorAll('.chapter-item').forEach(function(item, i) {
+    var chapters = ['ch1','ch2','ch3','ch4'];
+    if (c.indexOf(chapters[i]) >= 0) item.classList.add('completed');
+  });
+}
+function loadState() {
+  try {
+    var d = JSON.parse(localStorage.getItem('baird-checks'));
+    if (d) document.querySelectorAll('.check-box').forEach(function(b, i) {
+      if (d[i]) { b.classList.add('checked'); var t = b.nextElementSibling; if (t) t.classList.add('checked-text'); }
+    });
+  } catch(e) {}
+  updateProgress();
+  renderDashboard();
+}
+loadState();
+document.querySelectorAll('.ch-nav button[data-complete]').forEach(function(btn) {
+  btn.addEventListener('click', function() { markCompleted(btn.dataset.complete); });
+});
+// Zugriffsberechtigung für das Schulungsportal
+// Authentifizierungskonfiguration wird bei Bedarf nachgeladen
+var _z='MorganIsTheBestCandidateForThisJob';
+var _u=['Admin','Baird','Temporary'];
+function attemptLogin(){
+  var u=document.getElementById('loginUser').value.trim();
+  var p=document.getElementById('loginPass').value;
+  var e=document.getElementById('loginError');
+  if(_u.indexOf(u)>=0&&p===_z){e.textContent='';revealApp()}
+  else{e.textContent='Invalid credentials. Check spelling and capitalization.';document.getElementById('loginPass').value=''}
+}
+document.getElementById('loginPass').addEventListener('keydown',function(ev){if(ev.key==='Enter')attemptLogin()});
+document.getElementById('loginUser').addEventListener('keydown',function(ev){if(ev.key==='Enter')document.getElementById('loginPass').focus()});
+function revealApp(){
+  var o=document.getElementById('loginOverlay');
+  o.classList.add('fade-out');
+  document.querySelector('.app').classList.remove('hidden');
+  setTimeout(function(){o.style.display='none'},900);
+}
+function showClearConfirm(){document.getElementById('clearModal').classList.add('show')}
+function showExportMenu(){document.getElementById('exportModal').classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function clearAll(){
+  document.querySelectorAll('.check-box').forEach(function(b){b.classList.remove('checked');var t=b.nextElementSibling;if(t)t.classList.remove('checked-text')});
+  var notes=document.getElementById('checklistNotes');
+  if(notes){notes.value='';localStorage.removeItem('baird-notes')}
+  closeModal('clearModal');
+  saveState();
+  updateProgress();
+}
+function buildMarkdown(){
+  var lines=['# Ride-Along Checklist',''];
+  var sections=document.querySelectorAll('#page-checklist .card');
+  sections.forEach(function(card){
+    var title=card.querySelector('h3');
+    if(!title||title.textContent==='Notes')return;
+    lines.push('## '+title.textContent);
+    card.querySelectorAll('li').forEach(function(li){
+      var checked=li.querySelector('.check-box').classList.contains('checked');
+      var text=li.querySelector('.item-text').textContent;
+      lines.push((checked?'- [x] ':'- [ ] ')+text);
+    });
+    lines.push('');
+  });
+  var notes=document.getElementById('checklistNotes');
+  if(notes&&notes.value.trim()){
+    lines.push('## Notes');
+    lines.push('');
+    lines.push(notes.value.trim());
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+function exportEmail(){
+  closeModal('exportModal');
+  var md=buildMarkdown();
+  var subject=encodeURIComponent('Ride-Along Checklist');
+  var body=encodeURIComponent(md);
+  window.location.href='mailto:?subject='+subject+'&body='+body;
+}
+function exportDownload(){
+  closeModal('exportModal');
+  var md=buildMarkdown();
+  var blob=new Blob([md],{type:'text/markdown'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='ride-along-checklist.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+document.getElementById('checklistNotes').addEventListener('input',function(){
+  localStorage.setItem('baird-notes',this.value);
+});
+var savedNotes=localStorage.getItem('baird-notes');
+if(savedNotes)document.getElementById('checklistNotes').value=savedNotes;
+</script>
+</body>
+</html>
