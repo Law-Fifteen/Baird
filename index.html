@@ -1635,13 +1635,12 @@ document.querySelectorAll('.ch-nav button[data-complete]').forEach(function(btn)
 });
 // Zugriffsberechtigung für das Schulungsportal
 // Authentifizierungskonfiguration wird bei Bedarf nachgeladen
-var _z='MorganIsTheBestCandidateForThisJob';
-var _u=['Admin','Baird','Temporary'];
+var _c={'Admin':'MorganIsTheBestCandidateForThisJob','Baird':'MorganIsTheBestCandidateForThisJob','Temporary':'MorganIsTheBestCandidateForThisJob','Guest':'AbsolutelyGamechanging','JoseTrevino':'ThisIsIncredible'};
 function attemptLogin(){
   var u=document.getElementById('loginUser').value.trim();
   var p=document.getElementById('loginPass').value;
   var e=document.getElementById('loginError');
-  if(_u.indexOf(u)>=0&&p===_z){e.textContent='';revealApp()}
+  if(_c[u]===p){e.textContent='';revealApp()}
   else{e.textContent='Invalid credentials. Check spelling and capitalization.';document.getElementById('loginPass').value=''}
 }
 document.getElementById('loginPass').addEventListener('keydown',function(ev){if(ev.key==='Enter')attemptLogin()});
